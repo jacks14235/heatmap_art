@@ -1,8 +1,5 @@
 import numpy as np
 
-import numpy as np
-
-
 class Gradient:
     def __init__(self, colors, stops=[]):
         if (len(stops) == 0):
@@ -15,7 +12,11 @@ class Gradient:
         stops.append(1)
         self.stops = stops
 
-    def eval_np(self, n):
+    def eval_np(self, n, weight=lambda x: np.ones_like(x)):
+        # weights scales all points by a function of n at the end
+        weights = weight(n)
+        weights = np.expand_dims(weights, axis=-1).repeat(3, axis=-1)
+        
         n = np.atleast_1d(n)
         n = np.clip(n, 0.0001,.9999)
         result = np.zeros((len(n), 3))
@@ -34,6 +35,7 @@ class Gradient:
         colors_left = colors[indices - 1]
         colors_right = colors[indices]
         final = colors_left * (1 - dist) + colors_right * dist
+        final = final * weights
         
         return final.astype(np.uint8)
 
@@ -68,18 +70,11 @@ class Gradient:
         self.stops += [0.5 + stop * 0.5 for stop in reversed_stops[1:]]
         return self
 
-    def sample(self, width=512, height=512):
-        # Create empty image array
-        img_array = np.zeros((width, height, 3), dtype=np.uint8)
-        
-        # Fill image: horizontal gradient
-        for x in range(width):
-            t = x / (width - 1)
-            color = self.eval(t)
-            img_array[:, x, :] = color  # fill column with the color
-        
-        # Convert to PIL and show/save
-        return img_array
+    def sample(self, width=512, height=64):
+        line = np.linspace(0, 1, 512)
+        line = self.eval_np(line)
+        print(line.shape)
+        return np.repeat(line[np.newaxis, :, :], height, axis=0)
     
     def heat():
         return Gradient([
@@ -120,6 +115,16 @@ class Gradient:
             [0,0,255],
             [255,0,255],
             [255,0,0]
+        ])
+    
+    def rainbow_no_wrap():
+        return Gradient([
+            [255,0,0],
+            [255,255,0],
+            [0,255,0],
+            [0,255,255],
+            [0,0,255],
+            [255,0,255]
         ])
 
 def main():
