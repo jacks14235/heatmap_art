@@ -11,32 +11,47 @@ class Gradient:
         stops.insert(0, 0)
         stops.append(1)
         self.stops = stops
+    
+    def __reversed__(self):
+        colors = self.colors[::-1]
+        stops = [1 - stop for stop in self.stops[::-1]]
+        return Gradient(colors, stops[1:-1])
 
     def eval_np(self, n, weight=lambda x: np.ones_like(x)):
         # weights scales all points by a function of n at the end
-        weights = weight(n)
+        n_arr = np.atleast_1d(n).astype(np.float64)
+        # clip to valid range [0, 1]
+        n_clipped = np.clip(n_arr, 0.0, 1.0)
+
+        stops = np.array(self.stops, dtype=np.float64)
+        colors = np.array(self.colors, dtype=np.float64)
+
+        # find interval indices (left/right) for each n
+        indices = np.searchsorted(stops, n_clipped, side='left')
+        left_idx = np.clip(indices - 1, 0, len(stops) - 1)
+        right_idx = np.clip(indices, 0, len(stops) - 1)
+
+        actual_left = stops[left_idx]
+        actual_right = stops[right_idx]
+
+        denom = actual_right - actual_left
+        # avoid division by zero; where denom==0 keep dist=0
+        dist = np.zeros_like(n_clipped, dtype=np.float64)
+        nonzero = denom != 0
+        dist[nonzero] = (n_clipped[nonzero] - actual_left[nonzero]) / denom[nonzero]
+
+        # expand dist to RGB channels
+        dist_rgb = np.repeat(dist, 3, axis=-1).reshape((*n_clipped.shape, 3))
+
+        colors_left = colors[left_idx]
+        colors_right = colors[right_idx]
+
+        final = colors_left * (1 - dist_rgb) + colors_right * dist_rgb
+
+        weights = weight(n_clipped)
         weights = np.expand_dims(weights, axis=-1).repeat(3, axis=-1)
-        
-        n = np.atleast_1d(n)
-        n = np.clip(n, 0.0001,.9999)
-        result = np.zeros((len(n), 3))
-
-        indices = np.searchsorted(self.stops, n)
-        # colors = np.array([*self.colors, self.colors[-1]])
-        stops = np.array(self.stops)
-        colors = np.array(self.colors)
-
-
-        actual_left = stops[indices - 1]
-        actual_right = stops[indices]
-
-        dist = (n - actual_left) / (actual_right - actual_left)
-        dist = np.repeat(dist, 3, axis=-1).reshape((*n.shape, 3))
-        colors_left = colors[indices - 1]
-        colors_right = colors[indices]
-        final = colors_left * (1 - dist) + colors_right * dist
         final = final * weights
-        
+
         return final.astype(np.uint8)
 
     def eval(self, n):
@@ -59,9 +74,8 @@ class Gradient:
         return color
     
     def reverse(self):
-        self.colors = [self.colors[-i] for i in range(1, len(self.colors) + 1)]
-        self.stops = [(1 - self.stops[-i]) for i in range(1, len(self.stops) + 1)]
-        return self
+        self.colors = self.colors[::-1]
+        self.stops = [1 - stop for stop in self.stops[::-1]]
     
     def reflect(self):
         reversed_colors = self.colors[::-1]
