@@ -1,0 +1,39 @@
+## Rust / Cargo
+# Build output
+/target/
+
+# Rust tooling backups
+**/*.rs.bk
+
+# Code coverage and profiling
+*.profraw
+*.profdata
+*.gcno
+*.gcda
+
+# Platform-specific
+.DS_Store
+
+# Editors/IDE
+.vscode/
+.idea/
+
+## PyO3 / maturin (Python packaging from Rust)
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+target/wheels/
+
+# Logs
+*.log
+

@@ -1,0 +1,19 @@
+[package]
+name = "fitcoords"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fitcoords"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "fitcoords_cli"
+path = "src/main.rs"
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+numpy = "0.20"
+ndarray = "0.15"
+
+

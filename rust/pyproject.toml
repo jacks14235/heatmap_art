@@ -1,0 +1,14 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "fitcoords"
+version = "0.1.0"
+requires-python = ">=3.8"
+description = "FIT coordinate parser backed by Rust"
+
+[tool.maturin]
+module-name = "fitcoords"
+
+
